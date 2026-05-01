@@ -12,7 +12,7 @@ namespace Monogame1_5
 {
     public class Game1 : Game
     {
-        bool charTurn, squirtTurn, isScratching;
+        bool squirtleAction;
         float squirtAlpha, fadeTimer, fadeSpeed, charAlpha;
         Random stats = new Random();
         Random critChance = new Random();
@@ -20,19 +20,34 @@ namespace Monogame1_5
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         KeyboardState currentState, oldState;
-        Rectangle window, battleSize, movesetSize, moveInfoSize, selectLocation, healthLocation1, healthLocation2, healthTileLocation1, healthTileLocation2, charLocation, squirtLocation;
-        Vector2 emberLocation, scratchLocation, growlLocation, ppLocation, ppAmountLocation, typeLocation, ppTotalLocation, typeMoveLocation, totalHealthLocation, healthAmountLocation;
-        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander;
+        Rectangle window, battleSize, movesetSize, moveInfoSize, selectLocation, healthLocation1, healthLocation2, healthTileLocation1, healthTileLocation2, charLocation, squirtLocation, emberMove, onFireLocation, waterMove, wetLocation, battleInfo, introSize;
+        Vector2 emberLocation, scratchLocation, growlLocation, ppLocation, ppAmountLocation, typeLocation, ppTotalLocation, typeMoveLocation, totalHealthLocation, healthAmountLocation, battleText;
+        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip;
         Screen screen;
         SpriteFont pokeFont, healthFont;
-        int emberPPAmount, scratchPPAmount, growlPPAmount, healthAmount, charHealth, charAttack, charSAttack, charDefense, charSDefense, charSpeed, squirtAttack, squirtSAttack, squirtSpeed, squirtSDefense, squirtDefense, squirtHealth, crit, squirtChoice, growlCount, tailWhipCount, currentFrame;
-        double emberDamage, scratchDamage, waterGunDamage, tackleDamage, growlEffect, tailWhipEffect, squirtHealthBar, charHealthBar, frameTime;
+        int emberPPAmount, scratchPPAmount, growlPPAmount, healthAmount, charHealth, charAttack, charSAttack, charDefense, charSDefense, charSpeed, squirtAttack, squirtSAttack, squirtSpeed, squirtSDefense, squirtDefense, squirtHealth, crit, squirtChoice, growlCount, tailWhipCount, currentFrame, introFrame;
+        double emberDamage, scratchDamage, waterGunDamage, tackleDamage, growlEffect, tailWhipEffect, squirtHealthBar, charHealthBar, frameTime, emberInterval, onFireTime, waterInterval, wetTime, effectTime, battleTime, textTime;
         enum Screen
         {
-            Intro, Battlefield
+            Intro, Battlefield, End
+        }
+        enum Action
+        {
+            None, Scratch, Ember, Growl, Tackle, WaterGun, Whip
+        }
+        enum TextShown
+        {
+            None, Scratch, Ember, Growl, Tackle, WaterGun, Whip
+        }
+        enum Turn
+        {
+            charTurn, squirtTurn
         }
         List<Texture2D> scratch = new List<Texture2D>();
-        List<Texture2D> ember = new List<Texture2D>();
+        List<Texture2D> intro = new List<Texture2D>();
+        private Action currentAction;
+        private TextShown currentText;
+        private Turn currentTurn;
 
         public Game1()
         {
@@ -44,7 +59,7 @@ namespace Monogame1_5
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-            screen = Screen.Battlefield;
+            screen = Screen.Intro;
             window = new Rectangle(0, 0, 800, 600);
             _graphics.PreferredBackBufferWidth = window.Width;
             _graphics.PreferredBackBufferHeight = window.Height;
@@ -64,19 +79,33 @@ namespace Monogame1_5
             charSDefense = stats.Next(10, 13);
             charSpeed = stats.Next(11, 14);
             healthAmount = charHealth;
-            squirtHealthBar = 205 / squirtHealth;
-            charHealthBar = 205 / charHealth;
+            healthAmount = Math.Max(0, healthAmount);
+            squirtHealthBar = 205f / squirtHealth;
+            charHealthBar = 205f / charHealth;
+            if (charSpeed >= squirtSpeed)
+            {
+                currentTurn = Turn.charTurn;
+            }
+            else
+            {
+                currentTurn = Turn.squirtTurn;
+            }
 
             growlEffect = squirtAttack * 0.80;
             tailWhipEffect = charDefense * 0.80;
             growlCount = 0;
             tailWhipCount = 0;
-            isScratching = false;
+            currentAction = Action.None;
+            currentText = TextShown.None;
+            squirtleAction = false;
 
+            introSize = new Rectangle(0, 0, 800, 600);
             moveInfoSize = new Rectangle(550, 450, 250, 150);
             battleSize = new Rectangle(0, 0, 800, 450);
             movesetSize = new Rectangle(0, 450, 550, 150);
+            battleInfo = new Rectangle(0, 450, 800, 150);
             selectLocation = new Rectangle(25, 470, 40, 60);
+            battleText = new Vector2 (50, 480);
             emberLocation = new Vector2(70, 475);
             scratchLocation = new Vector2(70, 530);
             growlLocation = new Vector2(300, 475);
@@ -91,24 +120,35 @@ namespace Monogame1_5
             healthAmountLocation = new Vector2(670, 395);
             healthTileLocation1 = new Rectangle(130, 125, 205, 22);
             healthTileLocation2 = new Rectangle(545, 365, 205, 22);
-            charLocation = new Rectangle(80, 251, 250, 200);
+            charLocation = new Rectangle(80, 250, 250, 200);
             squirtLocation = new Rectangle(500, 100, 200, 200);
+            emberMove = new Rectangle(250, 350, 50, 50);
+            onFireLocation = new Rectangle(500, 100, 200, 200);
+            waterMove = new Rectangle(380, 200, 50, 50);
+            wetLocation = new Rectangle(80, 250, 200, 200);
 
             growlPPAmount = 40;
+            growlPPAmount = Math.Max(0, growlPPAmount);
             emberPPAmount = 25;
+            emberPPAmount = Math.Max(0, emberPPAmount);
             scratchPPAmount = 35;
+            scratchPPAmount = Math.Max(0, scratchPPAmount);
             squirtAlpha = 1f;
             charAlpha = 1f;
             fadeTimer = 0f;
             fadeSpeed = 10f;
+            emberInterval = 0.03;
+            waterInterval = 0.03;
+            healthLocation1.Width = Math.Max(0, healthLocation1.Width);
+            healthLocation2.Width = Math.Max(0, healthLocation2.Width);
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            //  redIntro = Content.Load<Video>("pokeRedIntro");
-            //introPlayer = new VideoPlayer();
+            intro.Add(Content.Load<Texture2D>("pokeRedIntro(1)"));
+            intro.Add(Content.Load<Texture2D>("pokeRedIntro(2)"));
             starterBattle = Content.Load<Texture2D>("starterBattle");
             starterMoveset = Content.Load<Texture2D>("starterMoveset");
             moveInfo = Content.Load<Texture2D>("starterMoveset");
@@ -121,8 +161,12 @@ namespace Monogame1_5
             scratch.Add(Content.Load<Texture2D>("scratch2"));
             scratch.Add(Content.Load<Texture2D>("scratch3"));
             scratch.Add(Content.Load<Texture2D>("scratch4"));
-            ember.Add(Content.Load<Texture2D>("Ember"));
-            ember.Add(Content.Load<Texture2D>("onFire"));
+            ember = Content.Load<Texture2D>("Ember");
+            onFire = Content.Load<Texture2D>("onFire");
+            waterGun = Content.Load<Texture2D>("waterGun");
+            wet = Content.Load<Texture2D>("wet");
+            growl = Content.Load<Texture2D>("growled");
+            tailWhip = Content.Load<Texture2D>("tailWhip");
             charmander = Content.Load<Texture2D>("charmander");
             squirtle = Content.Load<Texture2D>("squirtle");
             // TODO: use this.Content to load your game content here
@@ -132,173 +176,318 @@ namespace Monogame1_5
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+            frameTime = 0;
+            onFireTime = 0;
+            battleTime = 0;
+            wetTime = 0;
+            textTime = 0;
+            effectTime = 0;
+            emberMove.X = 250;
+            emberMove.Y = 350;
+            waterMove.X = 380;
+            waterMove.Y = 200;
+            currentState = Keyboard.GetState();
             // TODO: Add your update logic here
-            if (charSpeed >= squirtSpeed)
-            {
-                charTurn = true;
-                squirtTurn = false;
-            }
-            else
-            {
-                charTurn = false;
-                squirtTurn = true;
-            }
-            if (charTurn == true && squirtTurn == false)
-            {
-                crit = critChance.Next(1, 25);
-                currentState = Keyboard.GetState();
-                if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Down))
-                {
-                    selectLocation.Y = 525;
-                }
-                else if (selectLocation.X == 25 && selectLocation.Y == 525 && currentState.IsKeyDown(Keys.Up))
-                {
-                    selectLocation.Y = 470;
-                }
-                else if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Right))
-                {
-                    selectLocation.X = 255;
-                }
-                else if (selectLocation.X == 255 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Left))
-                {
-                    selectLocation.X = 25;
-                }
-
-                if (selectLocation.X == 25 && selectLocation.Y == 525)
-                {
-                    currentState = Keyboard.GetState();
-                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                    {
-                        isScratching = true;
-                        currentFrame = 0;
-                        frameTime = 0;
-                        scratchPPAmount -= 1;
-                        if (crit == 1)
-                        {
-                            scratchDamage = ((((2 * 5 * 2 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
-                            healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
-                            charTurn = false;
-                            squirtTurn = true;
-                        }
-                        else
-                        {
-                            scratchDamage = ((((2 * 5 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
-                            healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
-                            charTurn = false;
-                            squirtTurn = true;
-                        }
-                    }
-                    oldState = currentState;
-                }
-                else if (selectLocation.X == 255 && selectLocation.Y == 470)
-                {
-                    currentState = Keyboard.GetState();
-                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                    {
-                        growlPPAmount -= 1;
-                        squirtAttack -= (int)growlEffect;
-                        growlCount += 1;
-                        if (growlCount == 3)
-                        {
-                            growlEffect = 0;
-                        }
-                        charTurn = false;
-                        squirtTurn = true;
-                    }
-                    oldState = currentState;
-                }
-                else if (selectLocation.X == 25 && selectLocation.Y == 470)
-                {
-                    currentState = Keyboard.GetState();
-                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                    {
-                        emberPPAmount -= 1;
-                        if (crit == 1)
-                        {
-                            emberDamage = ((((2 * 5 * 2 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
-                            healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
-                            charTurn = false;
-                            squirtTurn = true;
-                        }
-                        else
-                        {
-                            emberDamage = ((((2 * 5 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
-                            healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
-                            charTurn = false;
-                            squirtTurn = true;
-                        }
-                    }
-                    oldState = currentState;
-                }
-            }
-            if (squirtTurn == true && charTurn == false)
-            {
-                squirtChoice = squirtMove.Next(1, 4);
-                crit = critChance.Next(1, 25);
-                if (squirtChoice == 1)
-                {
-                    if (crit == 1)
-                    {
-                        waterGunDamage = (((((2 * 5 * 2 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
-                        healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
-                        healthAmount -= (int)waterGunDamage;
-                        charTurn = true;
-                        squirtTurn = false;
-                    }
-                    else
-                    {
-                        waterGunDamage = (((((2 * 5 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
-                        healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
-                        healthAmount -= (int)waterGunDamage;
-                        charTurn = true;
-                        squirtTurn = false;
-                    }
-                }
-                if (squirtChoice == 2)
-                {
-                    if (crit == 1)
-                    {
-                        tackleDamage = ((((2 * 5 * 2 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
-                        healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
-                        healthAmount -= (int)tackleDamage;
-                        charTurn = true;
-                        squirtTurn = false;
-                    }
-                    else
-                    {
-                        tackleDamage = ((((2 * 5 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
-                        healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
-                        healthAmount -= (int)tackleDamage;
-                        charTurn = true;
-                        squirtTurn = false;
-                    }
-                }
-                if (squirtChoice == 3)
-                {
-                    charDefense -= (int)tailWhipEffect;
-                    tailWhipCount += 1;
-                    if (tailWhipCount == 3)
-                    {
-                        tailWhipEffect = 0;
-                    }
-                    charTurn = true;
-                    squirtTurn = false;
-                }
-            }
-            if (isScratching)
+            if (screen == Screen.Intro)
             {
                 frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                if (frameTime >= 0.1)
+                if (frameTime >= 0.5)
                 {
-                    currentFrame++;
+                    introFrame = 1;
+                }
+                if (frameTime >= 1)
+                {
+                    introFrame = 0;
                     frameTime = 0;
-
-                    if (currentFrame >= scratch.Count)
-                    {
-                        isScratching = false;
-                    }
+                }
+                if (currentState.IsKeyDown(Keys.Enter))
+                {
+                    screen = Screen.Battlefield;
                 }
             }
+            else if (screen == Screen.Battlefield)
+            {
+                if (currentTurn == Turn.charTurn)
+                {
+                    crit = critChance.Next(1, 25);
+                    if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Down))
+                    {
+                        selectLocation.Y = 525;
+                    }
+                    else if (selectLocation.X == 25 && selectLocation.Y == 525 && currentState.IsKeyDown(Keys.Up))
+                    {
+                        selectLocation.Y = 470;
+                    }
+                    else if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Right))
+                    {
+                        selectLocation.X = 255;
+                    }
+                    else if (selectLocation.X == 255 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Left))
+                    {
+                        selectLocation.X = 25;
+                    }
+
+                    if (selectLocation.X == 25 && selectLocation.Y == 525)
+                    {
+                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                        {
+                            currentAction = Action.Scratch;
+                            currentText = TextShown.Scratch;
+                            battleTime = 0;
+                            currentFrame = 0;
+                            frameTime = 0;
+                            scratchPPAmount -= 1;
+                            if (crit == 1)
+                            {
+                                scratchDamage = ((((2 * 5 * 2 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
+                                healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
+                            }
+                            else
+                            {
+                                scratchDamage = ((((2 * 5 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
+                                healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
+                            }
+                        }
+                    }
+                    else if (selectLocation.X == 255 && selectLocation.Y == 470)
+                    {
+                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                        {
+                            currentAction = Action.Growl;
+                            currentText = TextShown.Growl;
+                            growlPPAmount -= 1;
+                            squirtAttack -= (int)growlEffect;
+                            growlCount += 1;
+                            if (growlCount == 6)
+                            {
+                                growlEffect = 0;
+                            }
+                        }
+                    }
+                    else if (selectLocation.X == 25 && selectLocation.Y == 470)
+                    {
+                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                        {
+                            currentAction = Action.Ember;
+                            currentText = TextShown.Ember;
+                            emberPPAmount -= 1;
+                            if (crit == 1)
+                            {
+                                emberDamage = ((((2 * 5 * 2 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
+                                healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
+                            }
+                            else
+                            {
+                                emberDamage = ((((2 * 5 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
+                                healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
+                            }
+                        }
+                    }
+                }
+                if (currentTurn == Turn.squirtTurn && !squirtleAction)
+                {
+                    squirtleAction = true;
+                    squirtChoice = squirtMove.Next(1, 4);
+                    crit = critChance.Next(1, 25);
+                    if (squirtChoice == 1)
+                    {
+                        currentAction = Action.WaterGun;
+                        currentText = TextShown.WaterGun;
+                        if (crit == 1)
+                        {
+                            waterGunDamage = (((((2 * 5 * 2 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
+                            healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
+                            healthAmount -= (int)waterGunDamage;
+                        }
+                        else
+                        {
+                            waterGunDamage = (((((2 * 5 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
+                            healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
+                            healthAmount -= (int)waterGunDamage;
+                        }
+                    }
+                    else if (squirtChoice == 2)
+                    {
+                        currentAction = Action.Tackle;
+                        currentText = TextShown.Tackle;
+                        if (crit == 1)
+                        {
+                            tackleDamage = ((((2 * 5 * 2 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
+                            healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
+                            healthAmount -= (int)tackleDamage;
+                        }
+                        else
+                        {
+                            tackleDamage = ((((2 * 5 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
+                            healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
+                            healthAmount -= (int)tackleDamage;
+                        }
+                    }
+                    else if (squirtChoice == 3)
+                    {
+                        currentAction = Action.Whip;
+                        currentText = TextShown.Whip;
+                        charDefense -= (int)tailWhipEffect;
+                        tailWhipCount += 1;
+                        if (tailWhipCount == 3)
+                        {
+                            tailWhipEffect = 0;
+                        }
+                    }
+                }
+
+                if (currentAction == Action.Scratch)
+                {
+                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (frameTime >= 0.1)
+                    {
+                        currentFrame++;
+                        frameTime -= 0.1f;
+
+                        if (currentFrame >= scratch.Count && battleTime >= 1.0f)
+                        {
+                            currentAction = Action.None;
+                        }
+                    }
+                }
+                if (currentAction == Action.Ember)
+                {
+                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    onFireTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (frameTime >= emberInterval)
+                    {
+                        emberMove.X += 35;
+                        emberMove.Y -= 15;
+                        frameTime -= emberInterval;
+                    }
+                    if (onFireTime >= 0.4)
+                    {
+                        frameTime = 1;
+                        if (onFireTime >= 2 && battleTime >= 3)
+                        {
+                            currentAction = Action.None;
+                        }
+                    }
+                }
+                if (currentAction == Action.Tackle)
+                {
+                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (frameTime <= 0.5f)
+                    {
+                        squirtLocation.X -= 10;
+                        squirtLocation.Y += 5;
+                    }
+                    else if (frameTime <= 1f)
+                    {
+                        squirtLocation.X += 10;
+                        squirtLocation.Y -= 5;
+                    }
+                    else if (battleTime >= 3f)
+                    {
+                        currentAction = Action.None;
+                    }
+                }
+                if (currentAction == Action.WaterGun)
+                {
+                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    wetTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (frameTime >= waterInterval)
+                    {
+                        waterMove.X -= 35;
+                        waterMove.Y += 20;
+                        frameTime -= waterInterval;
+                    }
+                    if (wetTime >= 0.4)
+                    {
+                        frameTime = 1;
+                        if (wetTime >= 2 && battleTime >= 3)
+                        {
+                            currentAction = Action.None;
+                        }
+                    }
+                }
+                if (currentAction == Action.Growl)
+                {
+                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (effectTime >= 2 && battleTime >= 3)
+                    {
+                        currentAction = Action.None;
+                    }
+                }
+                if (currentAction == Action.Whip)
+                {
+                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (effectTime >= 2 && battleTime >= 3)
+                    {
+                        currentAction = Action.None;
+                    }
+                }
+
+                if (currentText == TextShown.Scratch)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (battleTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn = Turn.squirtTurn;
+                    }
+                }
+                if (currentText == TextShown.Tackle)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (battleTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn = Turn.charTurn;
+                        squirtleAction = false;
+                    }
+                }
+                if (currentText == TextShown.WaterGun)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (textTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn = Turn.charTurn;
+                        squirtleAction = false;
+                    }
+                }
+                if (currentText == TextShown.Ember)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (textTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn= Turn.squirtTurn;
+                    }
+                }
+                if (currentText == TextShown.Growl)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (textTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn = Turn.squirtTurn;
+                    }
+                }
+                if (currentText == TextShown.Whip)
+                {
+                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (textTime >= 3)
+                    {
+                        currentText = TextShown.None;
+                        currentTurn = Turn.charTurn;
+                        squirtleAction = false;
+                    }
+                }
+                oldState = currentState;
+            }
+            if (screen == Screen.End)
             base.Update(gameTime);
         }
 
@@ -306,17 +495,46 @@ namespace Monogame1_5
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
             float maxTimer = 3f * MathF.PI / fadeSpeed;
-          // Texture2D introRed = introPlayer.GetTexture();
             // TODO: Add your drawing code here
             _spriteBatch.Begin();
+            if (screen == Screen.Intro)
+            {
+                _spriteBatch.Draw(intro[introFrame], introSize, Color.White);
+            }
             if (screen == Screen.Battlefield)
             {
                 _spriteBatch.Draw(starterBattle, battleSize, Color.White);
                 _spriteBatch.Draw(starterMoveset, movesetSize, Color.White);
                 _spriteBatch.Draw(moveInfo, moveInfoSize, Color.White);
+                _spriteBatch.DrawString(healthFont, healthAmount.ToString() + "/", healthAmountLocation, Color.Black);
+                _spriteBatch.DrawString(healthFont, Convert.ToString(charHealth), totalHealthLocation, Color.Black);
+                _spriteBatch.DrawString(pokeFont, "Ember", emberLocation, Color.Black);
+                _spriteBatch.DrawString(pokeFont, "Scratch", scratchLocation, Color.Black);
+                _spriteBatch.DrawString(pokeFont, "Growl", growlLocation, Color.Black);
+                _spriteBatch.DrawString(pokeFont, "PP", ppLocation, Color.Black);
+                _spriteBatch.DrawString(pokeFont, "Type/", typeLocation, Color.Black);
+                if (selectLocation.X == 25 && selectLocation.Y == 470)
+                {
+                    _spriteBatch.DrawString(pokeFont, emberPPAmount.ToString(), ppAmountLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "/25", ppTotalLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "Fire", typeMoveLocation, Color.Black);
+                }
+                if (selectLocation.X == 255 && selectLocation.Y == 470)
+                {
+                    _spriteBatch.DrawString(pokeFont, growlPPAmount.ToString(), ppAmountLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "/40", ppTotalLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "Normal", typeMoveLocation, Color.Black);
+                }
+                if (selectLocation.X == 25 && selectLocation.Y == 525)
+                {
+                    _spriteBatch.DrawString(pokeFont, scratchPPAmount.ToString(), ppAmountLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "/35", ppTotalLocation, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "Normal", typeMoveLocation, Color.Black);
+                }
+                _spriteBatch.Draw(select, selectLocation, Color.Black);
                 _spriteBatch.Draw(squirtle, squirtLocation, Color.White * squirtAlpha);
                 _spriteBatch.Draw(charmander, charLocation, Color.White * charAlpha);
-                if (isScratching && currentFrame < scratch.Count)
+                if (currentAction == Action.Scratch && currentFrame < scratch.Count)
                 {
                     fadeTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
                     squirtAlpha = (float)(0.5f + 0.5f * Math.Sin(fadeTimer * fadeSpeed));
@@ -326,6 +544,58 @@ namespace Monogame1_5
                 {
                     squirtAlpha = 1f;
                     fadeTimer = 0f;
+                }
+                if (currentText == TextShown.Scratch && battleTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Charmander used Scratch!", battleText, Color.Black);
+                }
+                if (currentAction == Action.Ember && onFireTime <= 2)
+                {
+                    _spriteBatch.Draw(ember, emberMove, Color.White);
+                    if (onFireTime >= 0.4)
+                    {
+                        _spriteBatch.Draw(onFire, onFireLocation, Color.White);
+                    }
+                }
+                if (currentText == TextShown.Ember && textTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Charmander used Ember!", battleText, Color.Black);
+                }
+                if (currentAction == Action.WaterGun && wetTime <= 2)
+                {
+                    _spriteBatch.Draw(waterGun, waterMove, Color.White);
+                    if (wetTime >= 0.4)
+                    {
+                        _spriteBatch.Draw(wet, wetLocation, Color.White);
+                    }
+                }
+                if (currentText == TextShown.WaterGun && textTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Squirtle used Water Gun!", battleText, Color.Black);
+                }
+                if (currentAction == Action.Growl && effectTime <= 2)
+                    _spriteBatch.Draw(growl, squirtLocation, Color.White);
+                if (currentText == TextShown.Growl && textTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Charmander used Growl!", battleText, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, "Squirtle's attack fell.", new Vector2(50, 510), Color.Black);
+                }
+                if (currentAction == Action.Whip && effectTime <= 2)
+                    _spriteBatch.Draw(tailWhip, charLocation, Color.White);
+                if (currentText == TextShown.Whip && textTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Squirtle used Tail Whip!", battleText, Color.Black);
+                    _spriteBatch.DrawString(pokeFont, " Charmander's defense fell.", new Vector2(50, 510), Color.Black);
+                }
+                if (currentText == TextShown.Tackle && textTime <= 3)
+                {
+                    _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
+                    _spriteBatch.DrawString(pokeFont, "Squirtle used Tackle!", battleText, Color.Black);
                 }
                 if (healthTileLocation2.Width >= 152)
                 {
@@ -353,37 +623,7 @@ namespace Monogame1_5
                 }
                 _spriteBatch.Draw(healthBar, healthLocation1, Color.White);
                 _spriteBatch.Draw(healthBar, healthLocation2, Color.White);
-                _spriteBatch.DrawString(healthFont, healthAmount.ToString() + "/", healthAmountLocation, Color.Black);
-                _spriteBatch.DrawString(healthFont, Convert.ToString(charHealth), totalHealthLocation, Color.Black);
-                _spriteBatch.DrawString(pokeFont, "Ember", emberLocation, Color.Black);
-                _spriteBatch.DrawString(pokeFont, "Scratch", scratchLocation, Color.Black);
-                _spriteBatch.DrawString(pokeFont, "Growl", growlLocation, Color.Black);
-                _spriteBatch.DrawString(pokeFont, "PP", ppLocation, Color.Black);
-                _spriteBatch.DrawString(pokeFont, "Type/", typeLocation, Color.Black);
-                if (selectLocation.X == 25 && selectLocation.Y == 470)
-                {
-                    _spriteBatch.DrawString(pokeFont, emberPPAmount.ToString(), ppAmountLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "/25", ppTotalLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "Fire", typeMoveLocation, Color.Black);
-                }
-                if (selectLocation.X == 255 && selectLocation.Y == 470)
-                {
-                    _spriteBatch.DrawString(pokeFont, growlPPAmount.ToString(), ppAmountLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "/40", ppTotalLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "Normal", typeMoveLocation, Color.Black);
-                }
-                if (selectLocation.X == 25 && selectLocation.Y == 525)
-                {
-                    _spriteBatch.DrawString(pokeFont, scratchPPAmount.ToString(), ppAmountLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "/35", ppTotalLocation, Color.Black);
-                    _spriteBatch.DrawString(pokeFont, "Normal", typeMoveLocation, Color.Black);
-                }
-                _spriteBatch.Draw(select, selectLocation, Color.Black);
             }
-            /*if (screen == Screen.Intro)
-            {
-                _spriteBatch.Draw(introRed, introSize, Color.White);
-            }*/
             _spriteBatch.End();
             base.Draw(gameTime);
         }
