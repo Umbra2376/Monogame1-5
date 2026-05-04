@@ -21,10 +21,10 @@ namespace Monogame1_5
         private SpriteBatch _spriteBatch;
         KeyboardState currentState, oldState;
         Rectangle window, battleSize, movesetSize, moveInfoSize, selectLocation, healthLocation1, healthLocation2, healthTileLocation1, healthTileLocation2, charLocation, squirtLocation, emberMove, onFireLocation, waterMove, wetLocation, battleInfo, introSize;
-        Vector2 emberLocation, scratchLocation, growlLocation, ppLocation, ppAmountLocation, typeLocation, ppTotalLocation, typeMoveLocation, totalHealthLocation, healthAmountLocation, battleText;
-        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip;
+        Vector2 emberLocation, scratchLocation, growlLocation, ppLocation, ppAmountLocation, typeLocation, ppTotalLocation, typeMoveLocation, totalHealthLocation, healthAmountLocation, battleText, endTextLocation;
+        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip, pokeEnd;
         Screen screen;
-        SpriteFont pokeFont, healthFont;
+        SpriteFont pokeFont, healthFont, endFont;
         int emberPPAmount, scratchPPAmount, growlPPAmount, healthAmount, charHealth, charAttack, charSAttack, charDefense, charSDefense, charSpeed, squirtAttack, squirtSAttack, squirtSpeed, squirtSDefense, squirtDefense, squirtHealth, crit, squirtChoice, growlCount, tailWhipCount, currentFrame, introFrame;
         double emberDamage, scratchDamage, waterGunDamage, tackleDamage, growlEffect, tailWhipEffect, squirtHealthBar, charHealthBar, frameTime, emberInterval, onFireTime, waterInterval, wetTime, effectTime, battleTime, textTime;
         enum Screen
@@ -126,6 +126,7 @@ namespace Monogame1_5
             onFireLocation = new Rectangle(500, 100, 200, 200);
             waterMove = new Rectangle(380, 200, 50, 50);
             wetLocation = new Rectangle(80, 250, 200, 200);
+            endTextLocation = new Vector2(50, 400);
 
             growlPPAmount = 40;
             growlPPAmount = Math.Max(0, growlPPAmount);
@@ -141,6 +142,13 @@ namespace Monogame1_5
             waterInterval = 0.03;
             healthLocation1.Width = Math.Max(0, healthLocation1.Width);
             healthLocation2.Width = Math.Max(0, healthLocation2.Width);
+
+            frameTime = 0;
+            onFireTime = 0;
+            battleTime = 0;
+            wetTime = 0;
+            textTime = 0;
+            effectTime = 0;
             base.Initialize();
         }
 
@@ -156,6 +164,7 @@ namespace Monogame1_5
             select = Content.Load<Texture2D>("select");
             healthBar = Content.Load<Texture2D>("healthBar");
             healthFont = Content.Load<SpriteFont>("healthFont");
+            endFont = Content.Load<SpriteFont>("endFont");
             healthTile = Content.Load<Texture2D>("tile");
             scratch.Add(Content.Load<Texture2D>("scratch1"));
             scratch.Add(Content.Load<Texture2D>("scratch2"));
@@ -169,6 +178,7 @@ namespace Monogame1_5
             tailWhip = Content.Load<Texture2D>("tailWhip");
             charmander = Content.Load<Texture2D>("charmander");
             squirtle = Content.Load<Texture2D>("squirtle");
+            pokeEnd = Content.Load<Texture2D>("pokeEnd");
             // TODO: use this.Content to load your game content here
         }
 
@@ -176,16 +186,6 @@ namespace Monogame1_5
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            frameTime = 0;
-            onFireTime = 0;
-            battleTime = 0;
-            wetTime = 0;
-            textTime = 0;
-            effectTime = 0;
-            emberMove.X = 250;
-            emberMove.Y = 350;
-            waterMove.X = 380;
-            waterMove.Y = 200;
             currentState = Keyboard.GetState();
             // TODO: Add your update logic here
             if (screen == Screen.Intro)
@@ -347,6 +347,7 @@ namespace Monogame1_5
                         if (currentFrame >= scratch.Count && battleTime >= 1.0f)
                         {
                             currentAction = Action.None;
+                            frameTime = 0;
                         }
                     }
                 }
@@ -367,6 +368,11 @@ namespace Monogame1_5
                         if (onFireTime >= 2 && battleTime >= 3)
                         {
                             currentAction = Action.None;
+                            emberMove.X = 250;
+                            emberMove.Y = 350;
+                            battleTime = 0;
+                            frameTime = 0;
+                            onFireTime = 0;
                         }
                     }
                 }
@@ -387,6 +393,10 @@ namespace Monogame1_5
                     else if (battleTime >= 3f)
                     {
                         currentAction = Action.None;
+                        squirtLocation.X = 500;
+                        squirtLocation.Y = 100;
+                        battleTime = 0;
+                        frameTime = 0;
                     }
                 }
                 if (currentAction == Action.WaterGun)
@@ -406,6 +416,11 @@ namespace Monogame1_5
                         if (wetTime >= 2 && battleTime >= 3)
                         {
                             currentAction = Action.None;
+                            waterMove.X = 380;
+                            waterMove.Y = 200;
+                            battleTime = 0;
+                            frameTime = 0;
+                            wetTime = 0;
                         }
                     }
                 }
@@ -416,6 +431,8 @@ namespace Monogame1_5
                     if (effectTime >= 2 && battleTime >= 3)
                     {
                         currentAction = Action.None;
+                        effectTime = 0;
+                        battleTime = 0;
                     }
                 }
                 if (currentAction == Action.Whip)
@@ -425,26 +442,30 @@ namespace Monogame1_5
                     if (effectTime >= 2 && battleTime >= 3)
                     {
                         currentAction = Action.None;
+                        effectTime = 0;
+                        battleTime = 0;
                     }
                 }
 
                 if (currentText == TextShown.Scratch)
                 {
                     textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (battleTime >= 3)
+                    if (textTime >= 3)
                     {
                         currentText = TextShown.None;
                         currentTurn = Turn.squirtTurn;
+                        textTime = 0;
                     }
                 }
                 if (currentText == TextShown.Tackle)
                 {
                     textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (battleTime >= 3)
+                    if (textTime >= 3)
                     {
                         currentText = TextShown.None;
                         currentTurn = Turn.charTurn;
                         squirtleAction = false;
+                        textTime = 0;
                     }
                 }
                 if (currentText == TextShown.WaterGun)
@@ -455,6 +476,7 @@ namespace Monogame1_5
                         currentText = TextShown.None;
                         currentTurn = Turn.charTurn;
                         squirtleAction = false;
+                        textTime = 0;
                     }
                 }
                 if (currentText == TextShown.Ember)
@@ -464,6 +486,7 @@ namespace Monogame1_5
                     {
                         currentText = TextShown.None;
                         currentTurn= Turn.squirtTurn;
+                        textTime = 0;
                     }
                 }
                 if (currentText == TextShown.Growl)
@@ -473,6 +496,7 @@ namespace Monogame1_5
                     {
                         currentText = TextShown.None;
                         currentTurn = Turn.squirtTurn;
+                        textTime = 0;
                     }
                 }
                 if (currentText == TextShown.Whip)
@@ -483,11 +507,13 @@ namespace Monogame1_5
                         currentText = TextShown.None;
                         currentTurn = Turn.charTurn;
                         squirtleAction = false;
+                        textTime = 0;
                     }
                 }
                 oldState = currentState;
             }
-            if (screen == Screen.End)
+            if (healthAmount <= 0 || healthTileLocation1.Width <= 0)
+                screen = Screen.End;
             base.Update(gameTime);
         }
 
@@ -623,6 +649,14 @@ namespace Monogame1_5
                 }
                 _spriteBatch.Draw(healthBar, healthLocation1, Color.White);
                 _spriteBatch.Draw(healthBar, healthLocation2, Color.White);
+            }
+            if (screen == Screen.End)
+            {
+                _spriteBatch.Draw(pokeEnd, window, Color.White);
+                if (healthAmount <= 0)
+                    _spriteBatch.DrawString(endFont, "You Lose, better luck next time!!!", endTextLocation, Color.Red);
+                if (healthTileLocation1.Width <= 0)
+                    _spriteBatch.DrawString(endFont, "You Win! Congratulations!!!", endTextLocation, Color.Green);
             }
             _spriteBatch.End();
             base.Draw(gameTime);

@@ -37,6 +37,13 @@
 /processorParam:TextureFormat=Color
 /build:Ember.psd
 
+#begin endFont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:endFont.spritefont
+
 #begin font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -98,6 +105,9 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:pokeEnd.jfif
+
+#begin pokeEndFont.ttf
+/copy:pokeEndFont.ttf
 
 #begin pokemonFont.ttf
 /copy:pokemonFont.ttf
