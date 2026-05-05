@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
@@ -25,6 +26,8 @@ namespace Monogame1_5
         Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip, pokeEnd;
         Screen screen;
         SpriteFont pokeFont, healthFont, endFont;
+        SoundEffect battleMusic, introMusic;
+        SoundEffectInstance battleInstance, introInstance;
         int emberPPAmount, scratchPPAmount, growlPPAmount, healthAmount, charHealth, charAttack, charSAttack, charDefense, charSDefense, charSpeed, squirtAttack, squirtSAttack, squirtSpeed, squirtSDefense, squirtDefense, squirtHealth, crit, squirtChoice, growlCount, tailWhipCount, currentFrame, introFrame;
         double emberDamage, scratchDamage, waterGunDamage, tackleDamage, growlEffect, tailWhipEffect, squirtHealthBar, charHealthBar, frameTime, emberInterval, onFireTime, waterInterval, wetTime, effectTime, battleTime, textTime;
         enum Screen
@@ -126,7 +129,7 @@ namespace Monogame1_5
             onFireLocation = new Rectangle(500, 100, 200, 200);
             waterMove = new Rectangle(380, 200, 50, 50);
             wetLocation = new Rectangle(80, 250, 200, 200);
-            endTextLocation = new Vector2(50, 400);
+            endTextLocation = new Vector2(10, 400);
 
             growlPPAmount = 40;
             growlPPAmount = Math.Max(0, growlPPAmount);
@@ -179,6 +182,10 @@ namespace Monogame1_5
             charmander = Content.Load<Texture2D>("charmander");
             squirtle = Content.Load<Texture2D>("squirtle");
             pokeEnd = Content.Load<Texture2D>("pokeEnd");
+            battleMusic = Content.Load<SoundEffect>("battleMusic");
+            battleInstance = battleMusic.CreateInstance();
+            introMusic = Content.Load<SoundEffect>("pokeIntroMusic");
+            introInstance = introMusic.CreateInstance();
             // TODO: use this.Content to load your game content here
         }
 
@@ -190,6 +197,7 @@ namespace Monogame1_5
             // TODO: Add your update logic here
             if (screen == Screen.Intro)
             {
+                introInstance.Play();
                 frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
                 if (frameTime >= 0.5)
                 {
@@ -203,317 +211,25 @@ namespace Monogame1_5
                 if (currentState.IsKeyDown(Keys.Enter))
                 {
                     screen = Screen.Battlefield;
+                    introInstance.Stop();
                 }
             }
             else if (screen == Screen.Battlefield)
             {
-                if (currentTurn == Turn.charTurn)
-                {
-                    crit = critChance.Next(1, 25);
-                    if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Down))
-                    {
-                        selectLocation.Y = 525;
-                    }
-                    else if (selectLocation.X == 25 && selectLocation.Y == 525 && currentState.IsKeyDown(Keys.Up))
-                    {
-                        selectLocation.Y = 470;
-                    }
-                    else if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Right))
-                    {
-                        selectLocation.X = 255;
-                    }
-                    else if (selectLocation.X == 255 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Left))
-                    {
-                        selectLocation.X = 25;
-                    }
 
-                    if (selectLocation.X == 25 && selectLocation.Y == 525)
-                    {
-                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                        {
-                            currentAction = Action.Scratch;
-                            currentText = TextShown.Scratch;
-                            battleTime = 0;
-                            currentFrame = 0;
-                            frameTime = 0;
-                            scratchPPAmount -= 1;
-                            if (crit == 1)
-                            {
-                                scratchDamage = ((((2 * 5 * 2 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
-                                healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
-                            }
-                            else
-                            {
-                                scratchDamage = ((((2 * 5 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
-                                healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
-                            }
-                        }
-                    }
-                    else if (selectLocation.X == 255 && selectLocation.Y == 470)
-                    {
-                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                        {
-                            currentAction = Action.Growl;
-                            currentText = TextShown.Growl;
-                            growlPPAmount -= 1;
-                            squirtAttack -= (int)growlEffect;
-                            growlCount += 1;
-                            if (growlCount == 6)
-                            {
-                                growlEffect = 0;
-                            }
-                        }
-                    }
-                    else if (selectLocation.X == 25 && selectLocation.Y == 470)
-                    {
-                        if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
-                        {
-                            currentAction = Action.Ember;
-                            currentText = TextShown.Ember;
-                            emberPPAmount -= 1;
-                            if (crit == 1)
-                            {
-                                emberDamage = ((((2 * 5 * 2 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
-                                healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
-                            }
-                            else
-                            {
-                                emberDamage = ((((2 * 5 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
-                                healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
-                            }
-                        }
-                    }
-                }
-                if (currentTurn == Turn.squirtTurn && !squirtleAction)
-                {
-                    squirtleAction = true;
-                    squirtChoice = squirtMove.Next(1, 4);
-                    crit = critChance.Next(1, 25);
-                    if (squirtChoice == 1)
-                    {
-                        currentAction = Action.WaterGun;
-                        currentText = TextShown.WaterGun;
-                        if (crit == 1)
-                        {
-                            waterGunDamage = (((((2 * 5 * 2 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
-                            healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
-                            healthAmount -= (int)waterGunDamage;
-                        }
-                        else
-                        {
-                            waterGunDamage = (((((2 * 5 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
-                            healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
-                            healthAmount -= (int)waterGunDamage;
-                        }
-                    }
-                    else if (squirtChoice == 2)
-                    {
-                        currentAction = Action.Tackle;
-                        currentText = TextShown.Tackle;
-                        if (crit == 1)
-                        {
-                            tackleDamage = ((((2 * 5 * 2 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
-                            healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
-                            healthAmount -= (int)tackleDamage;
-                        }
-                        else
-                        {
-                            tackleDamage = ((((2 * 5 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
-                            healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
-                            healthAmount -= (int)tackleDamage;
-                        }
-                    }
-                    else if (squirtChoice == 3)
-                    {
-                        currentAction = Action.Whip;
-                        currentText = TextShown.Whip;
-                        charDefense -= (int)tailWhipEffect;
-                        tailWhipCount += 1;
-                        if (tailWhipCount == 3)
-                        {
-                            tailWhipEffect = 0;
-                        }
-                    }
-                }
 
-                if (currentAction == Action.Scratch)
-                {
-                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (frameTime >= 0.1)
-                    {
-                        currentFrame++;
-                        frameTime -= 0.1f;
+                Battle1(gameTime);
 
-                        if (currentFrame >= scratch.Count && battleTime >= 1.0f)
-                        {
-                            currentAction = Action.None;
-                            frameTime = 0;
-                        }
-                    }
-                }
-                if (currentAction == Action.Ember)
-                {
-                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    onFireTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (frameTime >= emberInterval)
-                    {
-                        emberMove.X += 35;
-                        emberMove.Y -= 15;
-                        frameTime -= emberInterval;
-                    }
-                    if (onFireTime >= 0.4)
-                    {
-                        frameTime = 1;
-                        if (onFireTime >= 2 && battleTime >= 3)
-                        {
-                            currentAction = Action.None;
-                            emberMove.X = 250;
-                            emberMove.Y = 350;
-                            battleTime = 0;
-                            frameTime = 0;
-                            onFireTime = 0;
-                        }
-                    }
-                }
-                if (currentAction == Action.Tackle)
-                {
-                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (frameTime <= 0.5f)
-                    {
-                        squirtLocation.X -= 10;
-                        squirtLocation.Y += 5;
-                    }
-                    else if (frameTime <= 1f)
-                    {
-                        squirtLocation.X += 10;
-                        squirtLocation.Y -= 5;
-                    }
-                    else if (battleTime >= 3f)
-                    {
-                        currentAction = Action.None;
-                        squirtLocation.X = 500;
-                        squirtLocation.Y = 100;
-                        battleTime = 0;
-                        frameTime = 0;
-                    }
-                }
-                if (currentAction == Action.WaterGun)
-                {
-                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    wetTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (frameTime >= waterInterval)
-                    {
-                        waterMove.X -= 35;
-                        waterMove.Y += 20;
-                        frameTime -= waterInterval;
-                    }
-                    if (wetTime >= 0.4)
-                    {
-                        frameTime = 1;
-                        if (wetTime >= 2 && battleTime >= 3)
-                        {
-                            currentAction = Action.None;
-                            waterMove.X = 380;
-                            waterMove.Y = 200;
-                            battleTime = 0;
-                            frameTime = 0;
-                            wetTime = 0;
-                        }
-                    }
-                }
-                if (currentAction == Action.Growl)
-                {
-                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (effectTime >= 2 && battleTime >= 3)
-                    {
-                        currentAction = Action.None;
-                        effectTime = 0;
-                        battleTime = 0;
-                    }
-                }
-                if (currentAction == Action.Whip)
-                {
-                    battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (effectTime >= 2 && battleTime >= 3)
-                    {
-                        currentAction = Action.None;
-                        effectTime = 0;
-                        battleTime = 0;
-                    }
-                }
 
-                if (currentText == TextShown.Scratch)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn = Turn.squirtTurn;
-                        textTime = 0;
-                    }
-                }
-                if (currentText == TextShown.Tackle)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn = Turn.charTurn;
-                        squirtleAction = false;
-                        textTime = 0;
-                    }
-                }
-                if (currentText == TextShown.WaterGun)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn = Turn.charTurn;
-                        squirtleAction = false;
-                        textTime = 0;
-                    }
-                }
-                if (currentText == TextShown.Ember)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn= Turn.squirtTurn;
-                        textTime = 0;
-                    }
-                }
-                if (currentText == TextShown.Growl)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn = Turn.squirtTurn;
-                        textTime = 0;
-                    }
-                }
-                if (currentText == TextShown.Whip)
-                {
-                    textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
-                    if (textTime >= 3)
-                    {
-                        currentText = TextShown.None;
-                        currentTurn = Turn.charTurn;
-                        squirtleAction = false;
-                        textTime = 0;
-                    }
-                }
-                oldState = currentState;
-            }
+
+
+
+            }   
+                
             if (healthAmount <= 0 || healthTileLocation1.Width <= 0)
+            {
                 screen = Screen.End;
+            }
             base.Update(gameTime);
         }
 
@@ -661,5 +377,319 @@ namespace Monogame1_5
             _spriteBatch.End();
             base.Draw(gameTime);
         }
+
+
+        public void Battle1(GameTime gameTime)
+        {
+            battleInstance.Play();
+            if (currentTurn == Turn.charTurn)
+            {
+                crit = critChance.Next(1, 25);
+                if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Down))
+                {
+                    selectLocation.Y = 525;
+                }
+                else if (selectLocation.X == 25 && selectLocation.Y == 525 && currentState.IsKeyDown(Keys.Up))
+                {
+                    selectLocation.Y = 470;
+                }
+                else if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Right))
+                {
+                    selectLocation.X = 255;
+                }
+                else if (selectLocation.X == 255 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Left))
+                {
+                    selectLocation.X = 25;
+                }
+
+                if (selectLocation.X == 25 && selectLocation.Y == 525)
+                {
+                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                    {
+                        currentAction = Action.Scratch;
+                        currentText = TextShown.Scratch;
+                        battleTime = 0;
+                        currentFrame = 0;
+                        frameTime = 0;
+                        scratchPPAmount -= 1;
+                        if (crit == 1)
+                        {
+                            scratchDamage = ((((2 * 5 * 2 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
+                            healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
+                        }
+                        else
+                        {
+                            scratchDamage = ((((2 * 5 / 5 + 2) * charAttack * 40 / squirtDefense) / 50) + 2);
+                            healthTileLocation1.Width -= (int)(squirtHealthBar * scratchDamage);
+                        }
+                    }
+                }
+                else if (selectLocation.X == 255 && selectLocation.Y == 470)
+                {
+                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                    {
+                        currentAction = Action.Growl;
+                        currentText = TextShown.Growl;
+                        growlPPAmount -= 1;
+                        squirtAttack -= (int)growlEffect;
+                        growlCount += 1;
+                        if (growlCount == 6)
+                        {
+                            growlEffect = 0;
+                        }
+                    }
+                }
+                else if (selectLocation.X == 25 && selectLocation.Y == 470)
+                {
+                    if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
+                    {
+                        currentAction = Action.Ember;
+                        currentText = TextShown.Ember;
+                        emberPPAmount -= 1;
+                        if (crit == 1)
+                        {
+                            emberDamage = ((((2 * 5 * 2 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
+                            healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
+                        }
+                        else
+                        {
+                            emberDamage = ((((2 * 5 / 5 + 2) * charSAttack * 40 / squirtSDefense) / 50) + 2) * 0.5;
+                            healthTileLocation1.Width -= (int)(squirtHealthBar * emberDamage);
+                        }
+                    }
+                }
+            }
+            if (currentTurn == Turn.squirtTurn && !squirtleAction)
+            {
+                squirtleAction = true;
+                squirtChoice = squirtMove.Next(1, 4);
+                crit = critChance.Next(1, 25);
+                if (squirtChoice == 1)
+                {
+                    currentAction = Action.WaterGun;
+                    currentText = TextShown.WaterGun;
+                    if (crit == 1)
+                    {
+                        waterGunDamage = (((((2 * 5 * 2 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
+                        healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
+                        healthAmount -= (int)waterGunDamage;
+                    }
+                    else
+                    {
+                        waterGunDamage = (((((2 * 5 / 5 + 2) * squirtSAttack * 40 / charSDefense) / 100) + 2) * 1.5);
+                        healthTileLocation2.Width -= (int)(charHealthBar * waterGunDamage);
+                        healthAmount -= (int)waterGunDamage;
+                    }
+                }
+                else if (squirtChoice == 2)
+                {
+                    currentAction = Action.Tackle;
+                    currentText = TextShown.Tackle;
+                    if (crit == 1)
+                    {
+                        tackleDamage = ((((2 * 5 * 2 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
+                        healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
+                        healthAmount -= (int)tackleDamage;
+                    }
+                    else
+                    {
+                        tackleDamage = ((((2 * 5 / 5 + 2) * squirtAttack * 40 / charDefense) / 100) + 2);
+                        healthTileLocation2.Width -= (int)(charHealthBar * tackleDamage);
+                        healthAmount -= (int)tackleDamage;
+                    }
+                }
+                else if (squirtChoice == 3)
+                {
+                    currentAction = Action.Whip;
+                    currentText = TextShown.Whip;
+                    charDefense -= (int)tailWhipEffect;
+                    tailWhipCount += 1;
+                    if (tailWhipCount == 3)
+                    {
+                        tailWhipEffect = 0;
+                    }
+                }
+            }
+
+            if (currentAction == Action.Scratch)
+            {
+                frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (frameTime >= 0.1)
+                {
+                    currentFrame++;
+                    frameTime -= 0.1f;
+
+                    if (currentFrame >= scratch.Count && battleTime >= 1.0f)
+                    {
+                        currentAction = Action.None;
+                        frameTime = 0;
+                    }
+                }
+            }
+            if (currentAction == Action.Ember)
+            {
+                battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                onFireTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (frameTime >= emberInterval)
+                {
+                    emberMove.X += 35;
+                    emberMove.Y -= 15;
+                    frameTime -= emberInterval;
+                }
+                if (onFireTime >= 0.4)
+                {
+                    frameTime = 1;
+                    if (onFireTime >= 2 && battleTime >= 3)
+                    {
+                        currentAction = Action.None;
+                        emberMove.X = 250;
+                        emberMove.Y = 350;
+                        battleTime = 0;
+                        frameTime = 0;
+                        onFireTime = 0;
+                    }
+                }
+            }
+            if (currentAction == Action.Tackle)
+            {
+                battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (frameTime <= 0.5f)
+                {
+                    squirtLocation.X -= 10;
+                    squirtLocation.Y += 5;
+                }
+                else if (frameTime <= 1f)
+                {
+                    squirtLocation.X += 10;
+                    squirtLocation.Y -= 5;
+                }
+                else if (battleTime >= 3f)
+                {
+                    currentAction = Action.None;
+                    squirtLocation.X = 500;
+                    squirtLocation.Y = 100;
+                    battleTime = 0;
+                    frameTime = 0;
+                }
+            }
+            if (currentAction == Action.WaterGun)
+            {
+                battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                frameTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                wetTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (frameTime >= waterInterval)
+                {
+                    waterMove.X -= 35;
+                    waterMove.Y += 20;
+                    frameTime -= waterInterval;
+                }
+                if (wetTime >= 0.4)
+                {
+                    frameTime = 1;
+                    if (wetTime >= 2 && battleTime >= 3)
+                    {
+                        currentAction = Action.None;
+                        waterMove.X = 380;
+                        waterMove.Y = 200;
+                        battleTime = 0;
+                        frameTime = 0;
+                        wetTime = 0;
+                    }
+                }
+            }
+            if (currentAction == Action.Growl)
+            {
+                battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (effectTime >= 2 && battleTime >= 3)
+                {
+                    currentAction = Action.None;
+                    effectTime = 0;
+                    battleTime = 0;
+                }
+            }
+            if (currentAction == Action.Whip)
+            {
+                battleTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                effectTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (effectTime >= 2 && battleTime >= 3)
+                {
+                    currentAction = Action.None;
+                    effectTime = 0;
+                    battleTime = 0;
+                }
+            }
+
+            if (currentText == TextShown.Scratch)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.squirtTurn;
+                    textTime = 0;
+                }
+            }
+            if (currentText == TextShown.Tackle)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.charTurn;
+                    squirtleAction = false;
+                    textTime = 0;
+                }
+            }
+            if (currentText == TextShown.WaterGun)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.charTurn;
+                    squirtleAction = false;
+                    textTime = 0;
+                }
+            }
+            if (currentText == TextShown.Ember)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.squirtTurn;
+                    textTime = 0;
+                }
+            }
+            if (currentText == TextShown.Growl)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.squirtTurn;
+                    textTime = 0;
+                }
+            }
+            if (currentText == TextShown.Whip)
+            {
+                textTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                if (textTime >= 3)
+                {
+                    currentText = TextShown.None;
+                    currentTurn = Turn.charTurn;
+                    squirtleAction = false;
+                    textTime = 0;
+                }
+            }
+            oldState = currentState;
+            battleInstance.Stop();
+        }
     }
+
+
+    
 }
