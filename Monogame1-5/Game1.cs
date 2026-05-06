@@ -13,7 +13,7 @@ namespace Monogame1_5
 {
     public class Game1 : Game
     {
-        bool squirtleAction;
+        bool squirtleAction, canAct;
         float squirtAlpha, fadeTimer, fadeSpeed, charAlpha;
         Random stats = new Random();
         Random critChance = new Random();
@@ -26,8 +26,8 @@ namespace Monogame1_5
         Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip, pokeEnd;
         Screen screen;
         SpriteFont pokeFont, healthFont, endFont;
-        SoundEffect battleMusic, introMusic;
-        SoundEffectInstance battleInstance, introInstance;
+        SoundEffect battleMusic, introMusic, scratchSound, emberSound, tackleSound, waterSound, growlSound, whipSound, endMusic;
+        SoundEffectInstance battleInstance, introInstance, scratchInstance, emberInstance, tackleInstance, waterInstance, growlInstance, whipInstance, endInstance;
         int emberPPAmount, scratchPPAmount, growlPPAmount, healthAmount, charHealth, charAttack, charSAttack, charDefense, charSDefense, charSpeed, squirtAttack, squirtSAttack, squirtSpeed, squirtSDefense, squirtDefense, squirtHealth, crit, squirtChoice, growlCount, tailWhipCount, currentFrame, introFrame;
         double emberDamage, scratchDamage, waterGunDamage, tackleDamage, growlEffect, tailWhipEffect, squirtHealthBar, charHealthBar, frameTime, emberInterval, onFireTime, waterInterval, wetTime, effectTime, battleTime, textTime;
         enum Screen
@@ -101,6 +101,7 @@ namespace Monogame1_5
             currentAction = Action.None;
             currentText = TextShown.None;
             squirtleAction = false;
+            canAct = true;
 
             introSize = new Rectangle(0, 0, 800, 600);
             moveInfoSize = new Rectangle(550, 450, 250, 150);
@@ -186,6 +187,26 @@ namespace Monogame1_5
             battleInstance = battleMusic.CreateInstance();
             introMusic = Content.Load<SoundEffect>("pokeIntroMusic");
             introInstance = introMusic.CreateInstance();
+            scratchSound = Content.Load<SoundEffect>("scratch");
+            scratchInstance = scratchSound.CreateInstance();
+            scratchInstance.IsLooped = false;
+            emberSound = Content.Load<SoundEffect>("emberSound");
+            emberInstance = emberSound.CreateInstance();
+            emberInstance.IsLooped = false;
+            tackleSound = Content.Load<SoundEffect>("tackle");
+            tackleInstance = tackleSound.CreateInstance();
+            tackleInstance.IsLooped = false;
+            waterSound = Content.Load<SoundEffect>("water-gun");
+            waterInstance = waterSound.CreateInstance();
+            waterInstance.IsLooped = false;
+            growlSound = Content.Load<SoundEffect>("growl");
+            growlInstance = growlSound.CreateInstance();
+            growlInstance.IsLooped = false;
+            whipSound = Content.Load<SoundEffect>("whipSound");
+            whipInstance = whipSound.CreateInstance();
+            whipInstance.IsLooped = false;
+            endMusic = Content.Load<SoundEffect>("pokeTheme");
+            endInstance = endMusic.CreateInstance();
             // TODO: use this.Content to load your game content here
         }
 
@@ -210,25 +231,23 @@ namespace Monogame1_5
                 }
                 if (currentState.IsKeyDown(Keys.Enter))
                 {
-                    screen = Screen.Battlefield;
                     introInstance.Stop();
+                    battleInstance.IsLooped = true;
+                    battleInstance.Play();
+                    screen = Screen.Battlefield;
                 }
             }
             else if (screen == Screen.Battlefield)
             {
-
-
                 Battle1(gameTime);
-
-
-
-
-
             }   
                 
             if (healthAmount <= 0 || healthTileLocation1.Width <= 0)
             {
+                battleInstance.Stop();
                 screen = Screen.End;
+                endInstance.IsLooped = true;
+                endInstance.Play();
             }
             base.Update(gameTime);
         }
@@ -291,6 +310,8 @@ namespace Monogame1_5
                 {
                     _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
                     _spriteBatch.DrawString(pokeFont, "Charmander used Scratch!", battleText, Color.Black);
+                    if (crit == 1)
+                        _spriteBatch.DrawString(pokeFont, "It was a crit!", new Vector2(50, 510), Color.Black);
                 }
                 if (currentAction == Action.Ember && onFireTime <= 2)
                 {
@@ -304,6 +325,8 @@ namespace Monogame1_5
                 {
                     _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
                     _spriteBatch.DrawString(pokeFont, "Charmander used Ember!", battleText, Color.Black);
+                    if (crit == 1)
+                        _spriteBatch.DrawString(pokeFont, "It was a crit!", new Vector2(50, 510), Color.Black);
                 }
                 if (currentAction == Action.WaterGun && wetTime <= 2)
                 {
@@ -317,6 +340,8 @@ namespace Monogame1_5
                 {
                     _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
                     _spriteBatch.DrawString(pokeFont, "Squirtle used Water Gun!", battleText, Color.Black);
+                    if (crit == 1)
+                        _spriteBatch.DrawString(pokeFont, "It was a crit!", new Vector2(50, 510), Color.Black);
                 }
                 if (currentAction == Action.Growl && effectTime <= 2)
                     _spriteBatch.Draw(growl, squirtLocation, Color.White);
@@ -338,6 +363,8 @@ namespace Monogame1_5
                 {
                     _spriteBatch.Draw(starterMoveset, battleInfo, Color.White);
                     _spriteBatch.DrawString(pokeFont, "Squirtle used Tackle!", battleText, Color.Black);
+                    if (crit == 1)
+                        _spriteBatch.DrawString(pokeFont, "It was a crit!", new Vector2(50, 510), Color.Black);
                 }
                 if (healthTileLocation2.Width >= 152)
                 {
@@ -370,7 +397,10 @@ namespace Monogame1_5
             {
                 _spriteBatch.Draw(pokeEnd, window, Color.White);
                 if (healthAmount <= 0)
-                    _spriteBatch.DrawString(endFont, "You Lose, better luck next time!!!", endTextLocation, Color.Red);
+                {
+                    _spriteBatch.DrawString(endFont, "You Lose:(", endTextLocation, Color.Red);
+                    _spriteBatch.DrawString(endFont, "Better Luck Next Time", new Vector2(10, 300), Color.Red);
+                }
                 if (healthTileLocation1.Width <= 0)
                     _spriteBatch.DrawString(endFont, "You Win! Congratulations!!!", endTextLocation, Color.Green);
             }
@@ -381,10 +411,8 @@ namespace Monogame1_5
 
         public void Battle1(GameTime gameTime)
         {
-            battleInstance.Play();
-            if (currentTurn == Turn.charTurn)
+            if (currentTurn == Turn.charTurn && canAct == true)
             {
-                crit = critChance.Next(1, 25);
                 if (selectLocation.X == 25 && selectLocation.Y == 470 && currentState.IsKeyDown(Keys.Down))
                 {
                     selectLocation.Y = 525;
@@ -401,11 +429,13 @@ namespace Monogame1_5
                 {
                     selectLocation.X = 25;
                 }
-
                 if (selectLocation.X == 25 && selectLocation.Y == 525)
                 {
                     if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
                     {
+                        canAct = false;
+                        scratchInstance.Play();
+                        crit = critChance.Next(1, 25);
                         currentAction = Action.Scratch;
                         currentText = TextShown.Scratch;
                         battleTime = 0;
@@ -428,6 +458,8 @@ namespace Monogame1_5
                 {
                     if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
                     {
+                        canAct = false;
+                        growlInstance.Play();
                         currentAction = Action.Growl;
                         currentText = TextShown.Growl;
                         growlPPAmount -= 1;
@@ -443,6 +475,9 @@ namespace Monogame1_5
                 {
                     if (currentState.IsKeyDown(Keys.A) && oldState.IsKeyUp(Keys.A))
                     {
+                        canAct = false;
+                        emberInstance.Play();
+                        crit = critChance.Next(1, 25);
                         currentAction = Action.Ember;
                         currentText = TextShown.Ember;
                         emberPPAmount -= 1;
@@ -459,13 +494,15 @@ namespace Monogame1_5
                     }
                 }
             }
-            if (currentTurn == Turn.squirtTurn && !squirtleAction)
+            if (currentTurn == Turn.squirtTurn && !squirtleAction && canAct == true)
             {
                 squirtleAction = true;
                 squirtChoice = squirtMove.Next(1, 4);
                 crit = critChance.Next(1, 25);
                 if (squirtChoice == 1)
                 {
+                    canAct = false;
+                    waterInstance.Play();
                     currentAction = Action.WaterGun;
                     currentText = TextShown.WaterGun;
                     if (crit == 1)
@@ -483,6 +520,8 @@ namespace Monogame1_5
                 }
                 else if (squirtChoice == 2)
                 {
+                    canAct = false;
+                    tackleInstance.Play();
                     currentAction = Action.Tackle;
                     currentText = TextShown.Tackle;
                     if (crit == 1)
@@ -500,6 +539,8 @@ namespace Monogame1_5
                 }
                 else if (squirtChoice == 3)
                 {
+                    canAct = false;
+                    waterInstance.Play();
                     currentAction = Action.Whip;
                     currentText = TextShown.Whip;
                     charDefense -= (int)tailWhipEffect;
@@ -518,7 +559,6 @@ namespace Monogame1_5
                 {
                     currentFrame++;
                     frameTime -= 0.1f;
-
                     if (currentFrame >= scratch.Count && battleTime >= 1.0f)
                     {
                         currentAction = Action.None;
@@ -629,6 +669,7 @@ namespace Monogame1_5
                 {
                     currentText = TextShown.None;
                     currentTurn = Turn.squirtTurn;
+                    canAct = true;
                     textTime = 0;
                 }
             }
@@ -639,6 +680,7 @@ namespace Monogame1_5
                 {
                     currentText = TextShown.None;
                     currentTurn = Turn.charTurn;
+                    canAct = true;
                     squirtleAction = false;
                     textTime = 0;
                 }
@@ -650,6 +692,7 @@ namespace Monogame1_5
                 {
                     currentText = TextShown.None;
                     currentTurn = Turn.charTurn;
+                    canAct = true;
                     squirtleAction = false;
                     textTime = 0;
                 }
@@ -661,6 +704,7 @@ namespace Monogame1_5
                 {
                     currentText = TextShown.None;
                     currentTurn = Turn.squirtTurn;
+                    canAct = true;
                     textTime = 0;
                 }
             }
@@ -671,6 +715,7 @@ namespace Monogame1_5
                 {
                     currentText = TextShown.None;
                     currentTurn = Turn.squirtTurn;
+                    canAct = true;
                     textTime = 0;
                 }
             }
@@ -682,14 +727,11 @@ namespace Monogame1_5
                     currentText = TextShown.None;
                     currentTurn = Turn.charTurn;
                     squirtleAction = false;
+                    canAct = true;
                     textTime = 0;
                 }
             }
             oldState = currentState;
-            battleInstance.Stop();
         }
     }
-
-
-    
 }

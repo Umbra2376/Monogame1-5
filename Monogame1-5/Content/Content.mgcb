@@ -43,6 +43,12 @@
 /processorParam:TextureFormat=Color
 /build:Ember.psd
 
+#begin emberSound.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:emberSound.mp3
+
 #begin endFont.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -56,6 +62,12 @@
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
 /build:font.spritefont
+
+#begin growl.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:growl.mp3
 
 #begin growled.psd
 /importer:TextureImporter
@@ -147,6 +159,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:pokeRedIntro(2).psd
+
+#begin pokeTheme.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:pokeTheme.mp3
+
+#begin scratch.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:scratch.mp3
 
 #begin scratch1.psd
 /importer:TextureImporter
@@ -244,6 +268,12 @@
 /processorParam:TextureFormat=Color
 /build:starterMoveset.png
 
+#begin tackle.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:tackle.mp3
+
 #begin tailWhip.psd
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -268,6 +298,12 @@
 /processorParam:TextureFormat=Color
 /build:tile.png
 
+#begin water-gun.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:water-gun.mp3
+
 #begin waterGun.psd
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -291,4 +327,10 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:wet.psd
+
+#begin whipSound.mp3
+/importer:Mp3Importer
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:whipSound.mp3
 
