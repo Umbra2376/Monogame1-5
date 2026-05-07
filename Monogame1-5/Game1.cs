@@ -23,7 +23,7 @@ namespace Monogame1_5
         KeyboardState currentState, oldState;
         Rectangle window, battleSize, movesetSize, moveInfoSize, selectLocation, healthLocation1, healthLocation2, healthTileLocation1, healthTileLocation2, charLocation, squirtLocation, emberMove, onFireLocation, waterMove, wetLocation, battleInfo, introSize;
         Vector2 emberLocation, scratchLocation, growlLocation, ppLocation, ppAmountLocation, typeLocation, ppTotalLocation, typeMoveLocation, totalHealthLocation, healthAmountLocation, battleText, endTextLocation;
-        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip, pokeEnd;
+        Texture2D starterBattle, starterMoveset, moveInfo, select, healthBar, healthTile, squirtle, charmander, ember, onFire, waterGun, wet, growl, tailWhip, pokeEnd, pokeLose;
         Screen screen;
         SpriteFont pokeFont, healthFont, endFont;
         SoundEffect battleMusic, introMusic, scratchSound, emberSound, tackleSound, waterSound, growlSound, whipSound, endMusic;
@@ -183,6 +183,7 @@ namespace Monogame1_5
             charmander = Content.Load<Texture2D>("charmander");
             squirtle = Content.Load<Texture2D>("squirtle");
             pokeEnd = Content.Load<Texture2D>("pokeEnd");
+            pokeLose = Content.Load<Texture2D>("pokeLose");
             battleMusic = Content.Load<SoundEffect>("battleMusic");
             battleInstance = battleMusic.CreateInstance();
             introMusic = Content.Load<SoundEffect>("pokeIntroMusic");
@@ -395,14 +396,17 @@ namespace Monogame1_5
             }
             if (screen == Screen.End)
             {
-                _spriteBatch.Draw(pokeEnd, window, Color.White);
                 if (healthAmount <= 0)
                 {
+                    _spriteBatch.Draw(pokeLose, window, Color.White);
                     _spriteBatch.DrawString(endFont, "You Lose:(", endTextLocation, Color.Red);
                     _spriteBatch.DrawString(endFont, "Better Luck Next Time", new Vector2(10, 300), Color.Red);
                 }
                 if (healthTileLocation1.Width <= 0)
+                {
+                    _spriteBatch.Draw(pokeEnd, window, Color.White);
                     _spriteBatch.DrawString(endFont, "You Win! Congratulations!!!", endTextLocation, Color.Green);
+                }
             }
             _spriteBatch.End();
             base.Draw(gameTime);
